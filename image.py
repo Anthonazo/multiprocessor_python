@@ -13,7 +13,7 @@ class Imagen:
         try:
             base_name = os.path.splitext(original_name)[0]
             file_name = f"{base_name}_{filter_name}_k{kernel_size}_{execution_type}.png"
-            output_path = os.path.join("src", "img", file_name)
+            output_path = os.path.join("img", file_name)
 
             # Crear la carpeta si no existe
             os.makedirs(os.path.dirname(output_path), exist_ok=True)

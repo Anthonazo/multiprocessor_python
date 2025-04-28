@@ -36,11 +36,11 @@ def main():
 
     # Ejecución Paralela
     start_time2 = time.time()
-    result_image2 = imagen.apply_convolution_parallel_rgb(image, laplacian_kernel)
+    result_image2 = imagen.apply_convolution_parallel_rgb(image, gaussian_kernel)
     end_time2 = time.time()
     duration2 = (end_time2 - start_time2) * 1000  # Tiempo en milisegundos
-    print(f"Tiempo de ejecución: {duration2:.2f} ms")
-    imagen.save_image(result_image2, "ej1.jpg", "gaussian", 13, "Paralela")
+    print(f"Tiempo de ejecución paralelo: {duration2:.2f} ms")
+    imagen.save_image(result_image2, "ej1.jpg", "gaussian", 21, "Paralela")
 
 
 if __name__ == "__main__":
