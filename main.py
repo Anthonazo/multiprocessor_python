@@ -8,7 +8,7 @@ from kernels import Kernels
 def main():
     # Generar kernels
     gaussian_kernel = Kernels.generate_gaussian_kernel(21, 4.5)
-    sobel_x_kernel = Kernels.generate_sobel_x_kernel(9)
+    sobel_x_kernel = Kernels.generate_sobel_x_kernel(13)
     laplacian_kernel = Kernels.generate_laplacian_kernel(9)
 
     # Cargar imagen
@@ -23,25 +23,25 @@ def main():
     imagen = Imagen()
 
     # Ejecución Secuencial
-    '''
+    
 
     start_time1 = time.time()
-    result_image1 = imagen.apply_convolution_rgb(image, gaussian_kernel)
+    result_image1 = imagen.apply_convolution_rgb_num(image, laplacian_kernel)
     end_time1 = time.time()
     duration1 = (end_time1 - start_time1) * 1000  # Tiempo en milisegundos
-    print(f"Tiempo de ejecución: {duration1:.2f} ms")
-    imagen.save_image(result_image1, "ej1.jpg", "gaussian", 13, "Secuencial")
+    print(f"Tiempo de ejecución secuencial: {duration1:.2f} ms")
+    imagen.save_image(result_image1, "ej1.jpg", "laplacian", 9, "Secuencial")
+    
+
     '''
-
-
     # Ejecución Paralela
     start_time2 = time.time()
-    result_image2 = imagen.apply_convolution_parallel_rgb(image, gaussian_kernel)
+    result_image2 = imagen.apply_convolution_parallel_rgb(image, laplacian_kernel)
     end_time2 = time.time()
     duration2 = (end_time2 - start_time2) * 1000  # Tiempo en milisegundos
     print(f"Tiempo de ejecución paralelo: {duration2:.2f} ms")
-    imagen.save_image(result_image2, "ej1.jpg", "gaussian", 21, "Paralela")
-
+    imagen.save_image(result_image2, "ej1.jpg", "laplace", 21, "Paralela")
+    '''
 
 if __name__ == "__main__":
     main()

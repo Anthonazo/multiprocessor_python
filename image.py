@@ -4,6 +4,28 @@ from PIL import Image
 import pycuda.driver as cuda
 from pycuda.compiler import SourceModule
 import os
+from scipy.signal import convolve2d
+from multiprocessing import Pool, cpu_count
+
+def process_pixel(args):
+    x, y, image_array, kernel, margin = args
+    red_sum = green_sum = blue_sum = 0
+    size_kernel = len(kernel)
+
+    for i in range(size_kernel):
+        for j in range(size_kernel):
+            pixel = image_array[y + j - margin, x + i - margin]
+            red, green, blue = pixel
+
+            red_sum += red * kernel[i][j]
+            green_sum += green * kernel[i][j]
+            blue_sum += blue * kernel[i][j]
+
+    new_red = min(max(int(red_sum), 0), 255)
+    new_green = min(max(int(green_sum), 0), 255)
+    new_blue = min(max(int(blue_sum), 0), 255)
+
+    return (x, y, (new_red, new_green, new_blue))
 
 class Imagen:
     def __init__(self):
@@ -23,7 +45,34 @@ class Imagen:
         except Exception as e:
             print(f"Error al guardar la imagen: {e}")
 
-    def apply_convolution_rgb(self, image, kernel):
+    def apply_convolution_rgb_num(self, image, kernel):
+        image_array = np.array(image)
+        kernel = np.array(kernel)
+
+        red_channel = image_array[:, :, 0]
+        green_channel = image_array[:, :, 1]
+        blue_channel = image_array[:, :, 2]
+
+        red_conv = convolve2d(red_channel, kernel, mode='same', boundary='fill', fillvalue=0)
+        green_conv = convolve2d(green_channel, kernel, mode='same', boundary='fill', fillvalue=0)
+        blue_conv = convolve2d(blue_channel, kernel, mode='same', boundary='fill', fillvalue=0)
+
+        # Creamos una imagen vacía (negra) igual que la manual
+        result_array = np.zeros_like(image_array)
+
+        size_kernel = kernel.shape[0]
+        margin = size_kernel // 2
+
+        # Solo copiamos el área interior procesada
+        result_array[margin:-margin, margin:-margin, 0] = np.clip(red_conv[margin:-margin, margin:-margin], 0, 255)
+        result_array[margin:-margin, margin:-margin, 1] = np.clip(green_conv[margin:-margin, margin:-margin], 0, 255)
+        result_array[margin:-margin, margin:-margin, 2] = np.clip(blue_conv[margin:-margin, margin:-margin], 0, 255)
+
+        result_image = Image.fromarray(result_array.astype(np.uint8), 'RGB')
+
+        return result_image
+
+    def apply_convolution_rgb_p(self, image, kernel):
         width, height = image.size
         size_kernel = len(kernel)
         margin = size_kernel // 2
@@ -51,6 +100,36 @@ class Imagen:
                 pixels[x, y] = (new_red, new_green, new_blue)
 
         return result_image
+    
+
+    
+
+    def apply_convolution_rgb_parallel_cpu(self, image, kernel):
+        width, height = image.size
+        size_kernel = len(kernel)
+        margin = size_kernel // 2
+
+        image_array = np.array(image)
+        kernel = np.array(kernel)
+
+        result_image = Image.new("RGB", (width, height))
+        pixels = result_image.load()
+
+        tasks = []
+        for x in range(margin, width - margin):
+            for y in range(margin, height - margin):
+                tasks.append((x, y, image_array, kernel, margin))
+
+        # Multiprocessing pool
+        with Pool(processes=cpu_count()) as pool:
+            results = pool.map(process_pixel, tasks)
+
+        # Escribir resultados
+        for x, y, color in results:
+            pixels[x, y] = color
+
+        return result_image
+
 
     def apply_convolution_parallel_rgb(self, image, kernel):
         width, height = image.size
